@@ -18,6 +18,10 @@ use curl::easy::Easy;
 
 use rand::prelude::*;
 
+struct Data {} // User data, which is stored and accessible in all command invocations
+type Error = Box<dyn std::error::Error + Send + Sync>;
+type Context<'a> = poise::Context<'a, Data, Error>;
+struct Handler;
 const KEYWORDS: [&str; 10] = [
     "Clinton", "Obama", "Biden", "China", "Iran", "Russia", 
     "Syria", "Bush", "Sanders", "illegal immigration"
@@ -39,10 +43,6 @@ const BOOKS: [&str; 66] = [
     "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John",
     "Jude", "Revelation",
 ];
-struct Data {} // User data, which is stored and accessible in all command invocations
-type Error = Box<dyn std::error::Error + Send + Sync>;
-type Context<'a> = poise::Context<'a, Data, Error>;
-struct Handler;
 async fn get_trump_quote(keyword: &str) -> Result<String, Error> {
     let url = format!("https://api.tronalddump.io/search/quote?query={}", keyword);
     let response = reqwest::get(&url).await?.text().await?;
@@ -68,14 +68,7 @@ fn substring_no_len(string: &String, pos: &usize) -> String {
     return return_string;
 }
 
-async fn get_bible_verse() -> String {
-    let root_directory = env::var("CARGO_MANIFEST_DIR").expect("Couldn't find the root directory of the Rust project.");
-    let mut file = File::open(format!("{}/json/en_kjv.json", root_directory)).expect("Just like Trump, the program was unable to read the Bible.");
-    let mut contents = String::new();
-    //let size = file.read_to_string(&mut contents).expect("Just like Trump, the program was unable to read the Bible.");
-    return contents;
-}
-/// Displays your or another user's account creation date
+// Posts a bible passage in chat
 #[poise::command(slash_command, prefix_command)]
 async fn bible(
     ctx: Context<'_>,
@@ -84,6 +77,9 @@ async fn bible(
     #[description = "Start Verse"] start: Option<u8>,
     #[description = "End Verse (May be blank)"] end: Option<u8>
 ) -> Result<(), Error> {
+    let root_directory = env::var("CARGO_MANIFEST_DIR").expect("Couldn't find the root directory of the Rust project.");
+    let mut file = File::open(format!("{}/json/en_kjv.json", root_directory)).expect("Just like Trump, the program was unable to read the Bible.");
+    let mut contents = String::new();
     let unwrapped_book: &str = &book.unwrap().to_string();
     if !BOOKS.contains(&unwrapped_book) {
         let response = format!("{} is not a valid book in the protestant Bible you Kamala-voting heathen.", &unwrapped_book);
