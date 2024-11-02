@@ -9,11 +9,8 @@ use std::collections::HashMap;
 
 use json::JsonValue;
 use reqwest::blocking::get;
-use reqwest::Error;
 
-use serenity::async_trait;
-use serenity::model::channel::Message;
-use serenity::prelude::*;
+use poise::serenity_prelude as serenity;
 
 use json::JsonValue::*;
 
@@ -21,21 +18,31 @@ use curl::easy::Easy;
 
 use rand::prelude::*;
 
-const KEYWORDS: [&str; 10] = ["Clinton", "Obama", "Biden", "China", "Iran", "Russia", "Syria", "Jeb Bush", "Bernie Sanders", "illegal immigration"];
+const KEYWORDS: [&str; 10] = [
+    "Clinton", "Obama", "Biden", "China", "Iran", "Russia", 
+    "Syria", "Bush", "Sanders", "illegal immigration"
+];
+const BOOKS: [&str; 66] = [
+    "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy",
+    "Joshua", "Judges", "Ruth",
+    "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles",
+    "Ezra", "Nehemiah", "Esther",
+    "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon",
+    "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel",
+    "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum",
+    "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi",
+    "Matthew", "Mark", "Luke", "John",
+    "Acts", "Romans", "1 Corinthians", "2 Corinthians",
+    "Galatians", "Ephesians", "Philippians", "Colossians",
+    "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy",
+    "Titus", "Philemon",
+    "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John",
+    "Jude", "Revelation",
+];
+struct Data {} // User data, which is stored and accessible in all command invocations
+type Error = Box<dyn std::error::Error + Send + Sync>;
+type Context<'a> = poise::Context<'a, Data, Error>;
 struct Handler;
-
-#[async_trait]
-impl EventHandler for Handler {
-    async fn message(&self, ctx: Context, msg: Message) {
-        for keyword in KEYWORDS {
-            if msg.content.to_ascii_lowercase().contains(&keyword.to_ascii_lowercase()) && msg.author.id != 1300497365735833661 {
-                if let Err(why) = msg.channel_id.say(&ctx.http, get_trump_quote(&keyword.to_string()).await.unwrap()).await {
-                    println!("Error sending message: {why:?}");
-                }
-            }
-        }
-    }
-}
 async fn get_trump_quote(keyword: &str) -> Result<String, Error> {
     let url = format!("https://api.tronalddump.io/search/quote?query={}", keyword);
     let response = reqwest::get(&url).await?.text().await?;
@@ -61,26 +68,51 @@ fn substring_no_len(string: &String, pos: &usize) -> String {
     return return_string;
 }
 
-fn get_bible_verse() -> String {
+async fn get_bible_verse() -> String {
     let root_directory = env::var("CARGO_MANIFEST_DIR").expect("Couldn't find the root directory of the Rust project.");
     let mut file = File::open(format!("{}/json/en_kjv.json", root_directory)).expect("Just like Trump, the program was unable to read the Bible.");
     let mut contents = String::new();
     //let size = file.read_to_string(&mut contents).expect("Just like Trump, the program was unable to read the Bible.");
     return contents;
 }
+/// Displays your or another user's account creation date
+#[poise::command(slash_command, prefix_command)]
+async fn bible(
+    ctx: Context<'_>,
+    #[description = "Book of the Bible"] book: Option<String>,
+    #[description = "Chapter of the selected book"] chapter: Option<String>,
+    #[description = "Start Verse"] start: Option<u8>,
+    #[description = "End Verse (May be blank)"] end: Option<u8>
+) -> Result<(), Error> {
+    let unwrapped_book: &str = &book.unwrap().to_string();
+    if !BOOKS.contains(&unwrapped_book) {
+        let response = format!("{} is not a valid book in the protestant Bible you Kamala-voting heathen.", &unwrapped_book);
+        ctx.say(response).await?;
+        return Ok(())
+    }
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() {
-    get_bible_verse();
-    let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
-    let intents = GatewayIntents::GUILD_MESSAGES
-        | GatewayIntents::DIRECT_MESSAGES
-        | GatewayIntents::MESSAGE_CONTENT;
+    let token = std::env::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN");
+    let intents = serenity::GatewayIntents::non_privileged();
 
-    let mut client =
-        Client::builder(&token, intents).event_handler(Handler).await.expect("Err creating client");
+    let framework = poise::Framework::builder()
+        .options(poise::FrameworkOptions {
+            commands: vec![bible()],
+            ..Default::default()
+        })
+        .setup(|ctx, _ready, framework| {
+            Box::pin(async move {
+                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                Ok(Data {})
+            })
+        })
+        .build();
 
-    // Start listening for events by starting a single shard
-    if let Err(why) = client.start().await {
-        println!("Client error: {why:?}");
-    }
+    let client = serenity::ClientBuilder::new(token, intents)
+        .framework(framework)
+        .await;
+    client.unwrap().start().await.unwrap();
 }
