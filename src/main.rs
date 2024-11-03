@@ -29,22 +29,6 @@ async fn get_trump_quote(keyword: &str) -> Result<String, Error> {
     Ok(quote.to_string())
 }
 
-// Rust doesn't have a good substring function so I made one
-fn substring(string: &String, pos: &usize, len: &usize) -> String {
-    let return_string: String = string.chars().skip(*pos).take(*len).collect();
-    println!("{}", &return_string);
-    return return_string;
-}
-
-// This is a variant of substring that just returns the rest of the string instead of having a specified length.
-// There is no function overloading in Rust.
-fn substring_no_len(string: &String, pos: &usize) -> String {
-    let return_string: String = string.chars().skip(*pos).collect();
-    println!("{}", &return_string);
-    return return_string;
-}
-
-
 fn format_book_name(mut book: String) -> String {
     book = book.to_ascii_lowercase();
     let mut book: Vec<char> = book.chars().collect();
@@ -82,7 +66,9 @@ async fn bible(
         verses.push(parsed_json[format!("{} {}:{}", book, chapter, verse)].as_str().unwrap().to_string());
     }
     let passage = verses.join(" ");
-    let response = format!("I love the Bible. It's my favorite book. Let me read you my favorite passage in the WHOLE Bible: \"{passage}\" God bless the USA.");
+    let response = format!("I love the Bible. It's my favorite book. Let me read you my favorite passage in the WHOLE Bible:
+                                    \n\n*\"{passage}\"*\n\n
+                                    God bless the USA.");
     ctx.say(response).await?;
     Ok(())
 }
