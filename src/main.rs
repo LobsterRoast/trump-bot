@@ -1,11 +1,5 @@
 use std::env;
-use std::fs::File;
-use std::io::Read;
-use std::str::FromStr;
-use std::str::from_utf8;
 use std::string::String;
-use std::str::SplitWhitespace;
-use std::collections::HashMap;
 
 use json::JsonValue;
 use reqwest::blocking::get;
@@ -13,8 +7,6 @@ use reqwest::blocking::get;
 use poise::serenity_prelude as serenity;
 
 use json::JsonValue::*;
-
-use curl::easy::Easy;
 
 use rand::prelude::*;
 
@@ -78,8 +70,10 @@ async fn bible(
     #[description = "End Verse (May be blank)"] end: Option<u8>
 ) -> Result<(), Error> {
     let root_directory = env::var("CARGO_MANIFEST_DIR").expect("Couldn't find the root directory of the Rust project.");
-    let mut file = File::open(format!("{}/json/en_kjv.json", root_directory)).expect("Just like Trump, the program was unable to read the Bible.");
-    let mut contents = String::new();
+    let parsing_error_msg = "Just like Trump, the program was unable to read the Bible.";
+    let parsed_json = json::parse(&std::fs::read_to_string(format!("{}/verses-1769.json)", root_directory))
+        .expect(&parsing_error_msg))
+        .expect(parsing_error_msg);
     let unwrapped_book: &str = &book.unwrap().to_string();
     if !BOOKS.contains(&unwrapped_book) {
         let response = format!("{} is not a valid book in the protestant Bible you Kamala-voting heathen.", &unwrapped_book);
@@ -91,7 +85,7 @@ async fn bible(
 
 #[tokio::main]
 async fn main() {
-    let token = std::env::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN");
+    let token = std::env::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN environment variable");
     let intents = serenity::GatewayIntents::non_privileged();
 
     let framework = poise::Framework::builder()
