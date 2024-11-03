@@ -4,8 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.91"
-curl = "0.4.47"
 json = "0.12.4"
 poise = "0.6.1"
 rand = "0.8.5"
