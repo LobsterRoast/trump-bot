@@ -5,15 +5,35 @@ use json::JsonValue;
 use reqwest::blocking::get;
 
 use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::EventHandler;
+use poise::serenity_prelude::FullEvent;
+use poise::serenity_prelude::Message;
+use poise::serenity_prelude::Context as OtherContext;
+use poise::serenity_prelude::CacheHttp;
+use poise::async_trait;
 
 use json::JsonValue::*;
 
 use rand::prelude::*;
+use ::serenity::all::Event;
 
-struct Data {} // User data, which is stored and accessible in all command invocations
+struct Data {}
+struct Handler;
+
+#[async_trait]
+impl EventHandler for Handler {
+    async fn message(&self, ctx: OtherContext, msg: Message) {
+        for keyword in KEYWORDS {
+            if msg.content.to_ascii_lowercase().contains(&keyword.to_ascii_lowercase()) && msg.author.id != 1300497365735833661 {
+                if let Err(why) = msg.channel_id.say(&ctx.http(), get_trump_quote(&keyword.to_string()).await.unwrap()).await {
+                    println!("Error sending message: {why:?}");
+                }
+            }
+        }
+    }
+}
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
-struct Handler;
 const KEYWORDS: [&str; 10] = [
     "Clinton", "Obama", "Biden", "China", "Iran", "Russia", 
     "Syria", "Bush", "Sanders", "illegal immigration"
@@ -76,9 +96,9 @@ async fn bible(
 #[tokio::main]
 async fn main() {
     let token = std::env::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN environment variable");
-    let intents = serenity::GatewayIntents::non_privileged();
+    let intents = serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT;
 
-    let framework = poise::Framework::builder()
+    let framework= poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands: vec![bible()],
             ..Default::default()
@@ -93,6 +113,7 @@ async fn main() {
 
     let client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
+        .event_handler(Handler)
         .await;
     client.unwrap().start().await.unwrap();
 }
