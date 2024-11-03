@@ -18,23 +18,7 @@ const KEYWORDS: [&str; 10] = [
     "Clinton", "Obama", "Biden", "China", "Iran", "Russia", 
     "Syria", "Bush", "Sanders", "illegal immigration"
 ];
-const BOOKS: [&str; 66] = [
-    "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy",
-    "Joshua", "Judges", "Ruth",
-    "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles",
-    "Ezra", "Nehemiah", "Esther",
-    "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon",
-    "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel",
-    "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum",
-    "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi",
-    "Matthew", "Mark", "Luke", "John",
-    "Acts", "Romans", "1 Corinthians", "2 Corinthians",
-    "Galatians", "Ephesians", "Philippians", "Colossians",
-    "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy",
-    "Titus", "Philemon",
-    "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John",
-    "Jude", "Revelation",
-];
+
 async fn get_trump_quote(keyword: &str) -> Result<String, Error> {
     let url = format!("https://api.tronalddump.io/search/quote?query={}", keyword);
     let response = reqwest::get(&url).await?.text().await?;
@@ -60,6 +44,18 @@ fn substring_no_len(string: &String, pos: &usize) -> String {
     return return_string;
 }
 
+
+fn format_book_name(mut book: String) -> String {
+    book = book.to_ascii_lowercase();
+    let mut book: Vec<char> = book.chars().collect();
+    'set_first_char_upper: for i in 0..book.len() {
+        if book[i].is_alphabetic() {
+            book[i] = book[i].to_uppercase().next().unwrap();
+            break 'set_first_char_upper;
+        }
+    }
+    book.into_iter().collect()
+}
 // Posts a bible passage in chat
 #[poise::command(slash_command, prefix_command)]
 async fn bible(
@@ -69,17 +65,25 @@ async fn bible(
     #[description = "Start Verse"] start: Option<u8>,
     #[description = "End Verse (May be blank)"] end: Option<u8>
 ) -> Result<(), Error> {
+    let book = format_book_name(book.unwrap());
+    let chapter = chapter.unwrap();
+    let start = start.unwrap();
+    let end = end.unwrap();
     let root_directory = env::var("CARGO_MANIFEST_DIR").expect("Couldn't find the root directory of the Rust project.");
     let parsing_error_msg = "Just like Trump, the program was unable to read the Bible.";
-    let parsed_json = json::parse(&std::fs::read_to_string(format!("{}/verses-1769.json)", root_directory))
+    let file_path = format!("{}/json/verses-1769.json", root_directory);
+    let parsed_json = json::parse(&std::fs::read_to_string(&file_path)
         .expect(&parsing_error_msg))
         .expect(parsing_error_msg);
-    let unwrapped_book: &str = &book.unwrap().to_string();
-    if !BOOKS.contains(&unwrapped_book) {
-        let response = format!("{} is not a valid book in the protestant Bible you Kamala-voting heathen.", &unwrapped_book);
-        ctx.say(response).await?;
-        return Ok(())
+    let unwrapped_book: &str = &book.to_string();
+    let mut verses: Vec<String> = Vec::new();
+    for verse in start..end+1 {
+        println!("{}", &verse);
+        verses.push(parsed_json[format!("{} {}:{}", book, chapter, verse)].as_str().unwrap().to_string());
     }
+    let passage = verses.join(" ");
+    let response = format!("I love the Bible. It's my favorite book. Let me read you my favorite passage in the WHOLE Bible: \"{passage}\" God bless the USA.");
+    ctx.say(response).await?;
     Ok(())
 }
 
