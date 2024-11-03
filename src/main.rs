@@ -6,7 +6,6 @@ use reqwest::blocking::get;
 
 use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::EventHandler;
-use poise::serenity_prelude::FullEvent;
 use poise::serenity_prelude::Message;
 use poise::serenity_prelude::Context as OtherContext;
 use poise::serenity_prelude::CacheHttp;
@@ -67,7 +66,7 @@ async fn bible(
     #[description = "Book of the Bible"] book: Option<String>,
     #[description = "Chapter of the selected book"] chapter: Option<String>,
     #[description = "Start Verse"] start: Option<u8>,
-    #[description = "End Verse (May be blank)"] end: Option<u8>
+    #[description = "End Verse"] end: Option<u8>
 ) -> Result<(), Error> {
     let book = format_book_name(book.unwrap());
     let chapter = chapter.unwrap();
@@ -86,9 +85,7 @@ async fn bible(
         verses.push(parsed_json[format!("{} {}:{}", book, chapter, verse)].as_str().unwrap().to_string());
     }
     let passage = verses.join(" ");
-    let response = format!("I love the Bible. It's my favorite book. Let me read you my favorite passage in the WHOLE Bible:
-                                    \n\n*\"{passage}\"*\n\n
-                                    God bless the USA.");
+    let response = format!("I love the Bible. It's my favorite book. Let me read you my favorite passage in the WHOLE Bible:\n\n*\"{passage}\"*\n\nGod bless the USA.");
     ctx.say(response).await?;
     Ok(())
 }
