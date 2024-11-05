@@ -62,7 +62,8 @@ async fn get_trump_quote(keyword: &str) -> Result<String, Error> {
     Ok(quote.to_string())
 }
 
-// This function is just to make sure that the /bible command is case-insensitve. It sets the first alphabetic character to lowercase.
+// This function is just to make sure that the /bible command is case-insensitve. It sets the first alphabetic character to uppercase.
+// It also sets everything else to lowercase. That is how the json containing the Bible data is formatted.
 fn format_book_name(mut book: String) -> String {
     book = book.to_ascii_lowercase();
     let mut book: Vec<char> = book.chars().collect();
