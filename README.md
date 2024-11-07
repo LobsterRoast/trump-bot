@@ -2,6 +2,8 @@
 
 This is a simple discord bot built on the Serenity/Poise framework for Rust. When players post certain trigger words in chat, Donald Trump will respond with a tweet relating to that trigger word in some way.
 
+Trigger words are "Clinton", "Obama", "Biden", "China", "Iran", "Russia", "Syria", "Bush", "Sanders", and "illegal immigration." They are case insensitve.
+
 You can also use /bible to retrieve a Bible verse from Donald Trump (he is very strong christian).
 
 # Installation
