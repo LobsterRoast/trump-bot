@@ -4,9 +4,6 @@
 use std::env;
 use std::string::String;
 
-use json::JsonValue;
-use reqwest::blocking::get;
-
 use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::EventHandler;
 use poise::serenity_prelude::Message;
@@ -14,10 +11,7 @@ use poise::serenity_prelude::Context as OtherContext;
 use poise::serenity_prelude::CacheHttp;
 use poise::async_trait;
 
-use json::JsonValue::*;
-
 use rand::prelude::*;
-use ::serenity::all::Event;
 
 struct Data {}
 struct Handler;
@@ -97,7 +91,6 @@ async fn bible(
     let parsed_json = json::parse(&std::fs::read_to_string(&file_path)
         .expect(&parsing_error_msg))
         .expect(parsing_error_msg);
-    let unwrapped_book: &str = &book.to_string();
     // Defines an empty vector of strings to which all requested verses can be pushed to
     let mut verses: Vec<String> = Vec::new();
     for verse in start..end+1 {
